@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastGPT 前端测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            color: #2d3748;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+        
+        .api-info {
+            background: #f7fafc;
+            border-left: 4px solid #4299e1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .response-area {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .response-title {
+            font-size: 1.2rem;
+            color: #2d3748;
+        }
+        
+        .copy-btn {
+            background: #48bb78;
+            width: auto;
+            padding: 8px 16px;
+        }
+        
+        .response-content {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 100px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .connected {
+            background: #48bb78;
+        }
+        
+        .disconnected {
+            background: #f56565;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 FastGPT 前端测试页面</h1>
+            <p class="subtitle">这是一个连接 FastGPT 后端的测试界面</p>
+        </header>
+        
+        <div class="api-info">
+            <h3>🔧 API 配置说明</h3>
+            <p>请确保已正确配置后端地址。当前配置：</p>
+            <p><strong>API Base URL:</strong> <code id="api-url">http://localhost:3000</code></p>
+            <button onclick="showConfigModal()" style="background: #4a5568; margin-top: 10px;">
+                修改后端地址
+            </button>
+        </div>
+        
+        <div class="form-group">
+            <label for="api-endpoint">📝 选择测试接口：</label>
+            <select id="api-endpoint" class="api-select">
+                <option value="/api/v1/chat/completions">对话接口 (POST /api/v1/chat/completions)</option>
+                <option value="/api/v1/health">健康检查 (GET /api/v1/health)</option>
+                <option value="/api/v1/models">模型列表 (GET /api/v1/models)</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="question-input">💬 输入问题：</label>
+            <input 
+                type="text" 
+                id="question-input" 
+                placeholder="请输入您的问题..." 
+                value="介绍一下什么是FastGPT？"
+            >
+        </div>
+        
+        <button id="send-btn" onclick="sendRequest()">🚀 发送请求</button>
+        <button onclick="testConnection()" style="background: #4299e1; margin-top: 10px;">
+            🔍 测试连接
+        </button>
+        
+        <div id="status" class="status"></div>
+        
+        <div class="response-area" id="response-area">
+            <div class="response-header">
+                <h3 class="response-title">📨 响应结果</h3>
+                <button class="copy-btn" onclick="copyToClipboard()">📋 复制</button>
+            </div>
+            <pre class="response-content" id="response-content">等待响应...</pre>
+        </div>
+        
+        <div id="api-status" class="api-status" style="display: none;">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">正在检查连接状态...</span>
+        </div>
+    </div>
+    
+    <!-- 配置弹窗 -->
+    <div id="config-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;">
+            <h3>⚙️ 配置后端地址</h3>
+            <p>请输入您的 FastGPT 后端地址：</p>
+            <input 
+                type="text" 
+                id="api-base-url" 
+                placeholder="例如：http://your-server-ip:3000"
+                style="width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 6px;"
+            >
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="saveConfig()" style="flex: 1; background: #48bb78;">💾 保存</button>
+                <button onclick="hideConfigModal()" style="flex: 1; background: #a0aec0;">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 获取DOM元素
+        const apiUrlElement = document.getElementById('api-url');
+        const questionInput = document.getElementById('question-input');
+        const responseArea = document.getElementById('response-area');
+        const responseContent = document.getElementById('response-content');
+        const statusElement = document.getElementById('status');
+        const apiStatusElement = document.getElementById('api-status');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const apiEndpointSelect = document.getElementById('api-endpoint');
+        const sendBtn = document.getElementById('send-btn');
+        const configModal = document.getElementById('config-modal');
+        
+        // 从localStorage加载配置
+        let API_BASE_URL = localStorage.getItem('fastgpt_api_base_url') || 'http://localhost:3000';
+        apiUrlElement.textContent = API_BASE_URL;
+        
+        // 页面加载完成后检查API连接
+        window.onload = function() {
+            testConnection();
+        };
+        
+        // 显示配置弹窗
+        function showConfigModal() {
+            document.getElementById('api-base-url').value = API_BASE_URL;
+            configModal.style.display = 'flex';
+        }
+        
+        // 隐藏配置弹窗
+        function hideConfigModal() {
+            configModal.style.display = 'none';
+        }
+        
+        // 保存配置
+        function saveConfig() {
+            const newUrl = document.getElementById('api-base-url').value.trim();
+            if (newUrl) {
+                // 确保URL格式正确
+                let formattedUrl = newUrl;
+                if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+                    formattedUrl = 'http://' + formattedUrl;
+                }
+                
+                API_BASE_URL = formattedUrl;
+                localStorage.setItem('fastgpt_api_base_url', API_BASE_URL);
+                apiUrlElement.textContent = API_BASE_URL;
+                hideConfigModal();
+                
+                // 保存后立即测试连接
+                showStatus('配置已保存！正在测试新连接...', 'success');
+                testConnection();
+            }
+        }
+        
+        // 发送请求到FastGPT
+        async function sendRequest() {
+            const question = questionInput.value.trim();
+            if (!question) {
+                showStatus('请输入问题！', 'error');
+                return;
+            }
+            
+            const endpoint = apiEndpointSelect.value;
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '⏳ 请求中...';
+            responseArea.style.display = 'none';
+            
+            try {
+                let response;
+                let requestBody = {};
+                
+                if (endpoint === '/api/v1/chat/completions') {
+                    requestBody = {
+                        model: 'gpt-3.5-turbo',
+                        messages: [
+                            { role: 'system', content: '你是一个有用的助手。' },
+                            { role: 'user', content: question }
+                        ],
+                        stream: false
+                    };
+                }
+                
+                if (endpoint === '/api/v1/chat/completions') {
+                    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer sk-fastgpt'  // FastGPT默认使用的API Key
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                } else {
+                    response = await fetch(`${API_BASE_URL}${endpoint}`);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // 格式化显示响应
+                let formattedResponse = '';
+                if (endpoint === '/api/v1/chat/completions') {
+                    formattedResponse = data.choices?.[0]?.message?.content || 
+                                      JSON.stringify(data, null, 2);
+                } else {
+                    formattedResponse = JSON.stringify(data, null, 2);
+                }
+                
+                responseContent.textContent = formattedResponse;
+                responseArea.style.display = 'block';
+                showStatus('请求成功！', 'success');
+                
+            } catch (error) {
+                responseContent.textContent = `请求失败:\n${error.message}`;
+                responseArea.style.display = 'block';
+                showStatus(`请求失败: ${error.message}`, 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '🚀 发送请求';
+            }
+        }
+        
+        // 测试API连接
+        async function testConnection() {
+            apiStatusElement.style.display = 'flex';
+            statusDot.className = 'status-dot';
+            statusText.textContent = '正在检查连接...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = '✅ API连接正常';
+                    showStatus('API连接正常！', 'success');
+                } else {
+                    statusDot.classList.add('disconnected');
+                    statusText.textContent = `❌ API连接失败 (${response.status})`;
+                    showStatus('API连接失败，请检查后端服务', 'error');
+                }
+            } catch (error) {
+                statusDot.classList.add('disconnected');
+                statusText.textContent = '❌ 无法连接到API';
+                showStatus(`连接错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 显示状态消息
+        function showStatus(message, type) {
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            statusElement.style.display = 'block';
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 复制到剪贴板
+        function copyToClipboard() {
+            const text = responseContent.textContent;
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    const originalText = document.querySelector('.copy-btn').textContent;
+                    document.querySelector('.copy-btn').textContent = '✅ 已复制';
+                    setTimeout(() => {
+                        document.querySelector('.copy-btn').textContent = originalText;
+                    }, 2000);
+                });
+        }
+    </script>
+</body>
+</html>
